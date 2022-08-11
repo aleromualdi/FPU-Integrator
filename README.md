@@ -13,6 +13,7 @@ pip install -r requirements.txt
 ```
 
 To run the script to generate simulation
+
 ```
 cd src
 
