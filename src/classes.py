@@ -1,5 +1,5 @@
-from typing import Tuple
 import numpy as np
+from typing import Tuple
 from tqdm import tqdm
 
 
@@ -23,25 +23,79 @@ class FPU(object):
         self.initial_mode_amplitude = initial_mode_amplitude
         self.t_step = t_step
         self.t_max = t_max
+        self.n_time_steps = int(self.t_max / self.t_step)
+
         self.alpha = alpha
         self.beta = beta
 
-        # initialisation of displacements and velocities (conjugate moments)
-        self.q = self._initialise_displacements()
-        self.p = np.zeros(shape=(num_atoms,))
+        self._initialise_displacements()
+        self._initialise_momenta()
+        self._initial_mode_energies()
 
-    def _initialise_displacements(self) -> np.array:
-        """Initialise displacements in a given mode number."""
+    def _initialise_displacements(self):
+        """Initialise displacements in initial mode."""
 
-        q = np.zeros(shape=(self.num_atoms,))
+        q = np.zeros(shape=(self.num_atoms, self.n_time_steps))
 
         coef = np.sqrt(2.0 / (self.num_atoms + 1))
         for i in range(0, self.num_atoms):
             # formula says i * k * pi but array q starts with index 0
             const = (i + 1) * self.initial_mode_number * np.pi
             sin_arg = const / (self.num_atoms + 1)
-            q[i] = self.initial_mode_amplitude * coef * np.sin(sin_arg)
-        return q
+            q[i][0] = self.initial_mode_amplitude * coef * np.sin(sin_arg)
+        self.q = q
+
+    def _initialise_momenta(self):
+        self.p = np.zeros(shape=(self.num_atoms, self.n_time_steps))
+
+    def _initial_mode_energies(self):
+
+        mode_energies = np.zeros(shape=(self.num_modes, self.n_time_steps))
+
+        for mode_number in range(self.num_modes):
+            mode_energies[mode_number][0] = self._compute_mode_energy(
+                self.q[:, 0], self.p[:, 0], mode_number
+            )
+
+        self.mode_energies = mode_energies
+
+    def run(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Run Fermi-Pasta-Ulam integrator.
+
+        Returns
+        -------
+        array of time steps and nd array of mode energies
+        """
+
+        times = [0]
+        current_time = 0
+        for t in tqdm(range(self.n_time_steps - 1)):
+            self.q[:, t + 1], self.p[:, t + 1] = self._perform_verlet_step(
+                self.q[:, t], self.p[:, t]
+            )
+
+            current_time += self.t_step
+            times.append(current_time)
+
+            for mode_idx in range(self.num_modes):
+                mode_number = mode_idx + 1
+                mode_energy = self._compute_mode_energy(
+                    self.q[:, t + 1], self.p[:, t + 1], mode_number
+                )
+                self.mode_energies[mode_idx][t + 1] = mode_energy
+
+        return np.array(times), self.q, self.p, self.mode_energies
+
+    def _perform_verlet_step(
+        self, q: np.array, p: np.array
+    ) -> Tuple[np.array, np.array]:
+        """Perform one step of the velocity Verlet algorithm."""
+
+        p_half = p + 0.5 * self.t_step * self._compute_force(q)
+        q = q + self.t_step * p_half  # q at tstep
+        p = p_half + 0.5 * self.t_step * self._compute_force(q)
+
+        return q, p
 
     def _compute_force(self, q: np.array) -> np.array:
         """Gives linear (Hook's law) plus nonlinear (quadratic, cubic) terms dictated by alpha and beta,
@@ -59,6 +113,7 @@ class FPU(object):
             + self.beta * (q[1] - q[0]) ** 3
             - self.beta * q[0] ** 3
         )
+        # print("self.alpha * (q[1] - q[0]) ** 2", q[1], q[0])
         force[n_f] = (
             q[n_f_minus]
             - 2.0 * q[n_f]
@@ -95,46 +150,9 @@ class FPU(object):
         for j in range(0, self.num_atoms):
             sin_arg = (j * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * p[j]
+            # print("sin_arg", sin_arg, "p[j]", p[j])
             p_new[j] = coef * term
         p_sum = np.sum(p_new)
         pBigSq = 0.5 * p_sum ** 2
 
         return pBigSq + qBigSq
-
-    def _perform_verlet_step(
-        self, q: np.array, p: np.array
-    ) -> Tuple[np.array, np.array]:
-        """Perform one step of the velocity Verlet algorithm."""
-
-        p_half = p + 0.5 * self.t_step * self._compute_force(q)
-        q = q + self.t_step * p_half  # q at tstep
-        p = p_half + 0.5 * self.t_step * self._compute_force(q)
-
-        return q, p
-
-    def run(self) -> Tuple[np.array, np.array]:
-        """Run Fermi-Pasta-Ulam integrator.
-
-        Returns
-        -------
-        array of time steps and nd array of mode energies
-        """
-        time_steps = []
-        mode_energies = {}
-        for mode_num in range(1, self.num_modes + 1):
-            mode_energies["mode_" + str(mode_num)] = []
-
-        for tstep in tqdm(range(1, self.t_max + 1)):
-            # print 'time-step', tstep
-            # velocity Verlet, do not change the order of the statements
-            p_half = self.p + 0.5 * self.t_step * self._compute_force(self.q)
-            self.q = self.q + self.t_step * p_half  # q at tstep
-            self.p = p_half + 0.5 * self.t_step * self._compute_force(self.q)
-
-            time_steps.append(tstep)
-
-            for mode_num in range(1, self.num_modes + 1):
-                mode_energy = self._compute_mode_energy(self.q, self.p, mode_num)
-                mode_energies["mode_" + str(mode_num)].append(mode_energy)
-
-        return np.array(time_steps), mode_energies
