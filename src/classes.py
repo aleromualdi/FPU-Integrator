@@ -59,7 +59,9 @@ class FPU(object):
 
         self.mode_energies = mode_energies
 
-    def run(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def run(
+        self, method="verlet"
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Run Fermi-Pasta-Ulam integrator.
 
         Returns
@@ -70,9 +72,14 @@ class FPU(object):
         times = [0]
         current_time = 0
         for t in tqdm(range(self.n_time_steps - 1)):
-            self.q[:, t + 1], self.p[:, t + 1] = self._perform_verlet_step(
-                self.q[:, t], self.p[:, t]
-            )
+            if method == "verlet":
+                self.q[:, t + 1], self.p[:, t + 1] = self._perform_verlet_step(
+                    self.q[:, t], self.p[:, t]
+                )
+            elif method == "runge-kutta":
+                self.q[:, t + 1], self.p[:, t + 1] = self._perform_runge_kutta_step(
+                    self.q[:, t], self.p[:, t]
+                )
 
             current_time += self.t_step
             times.append(current_time)
@@ -95,6 +102,28 @@ class FPU(object):
         q = q + self.t_step * p_half  # q at tstep
         p = p_half + 0.5 * self.t_step * self._compute_force(q)
 
+        return q, p
+
+    def _perform_runge_kutta_step(
+        self, q: np.array, p: np.array
+    ) -> Tuple[np.array, np.array]:
+        """Perform 4th order Runge-Kutta algorithm."""
+        k1_q = p
+        k1_p = self._compute_force(q)
+        k2_q = p + 0.5 * k1_q * self.t_step
+        q_s = q + 0.5 * k1_p * self.t_step
+        k2_p = self._compute_force(q_s)
+        k3_q = p + 0.5 * k2_q * self.t_step
+        q_s1 = q + 0.5 * k2_p * self.t_step
+        k3_p = self._compute_force(q_s1)
+        k4_q = p + k3_q + self.t_step
+        q_s2 = q + k3_p * self.t_step
+        k4_p = self._compute_force(q_s2)
+        sumKq = k1_q + 2.0 * k2_q + 2.0 * k3_q + k4_q
+        sumKp = k1_p + 2.0 * k2_p + 2.0 * k3_p + k4_p
+        prefact = (1.0 / 6.0) * self.t_step
+        q = q + prefact * sumKq
+        p = p + prefact * sumKp
         return q, p
 
     def _compute_force(self, q: np.array) -> np.array:
@@ -138,11 +167,11 @@ class FPU(object):
         coef = np.sqrt(2.0 / (self.num_atoms + 1))
         q_new = np.zeros(shape=self.num_atoms)
         p_new = np.zeros(shape=self.num_atoms)
-        argMode = np.pi/(self.num_atoms + 1)
+        argMode = np.pi / (self.num_atoms + 1)
         for j in range(0, self.num_atoms):
             sin_arg = (j * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * q[j]
-            omega_mode = 2. * np.sin(mode_number * argMode)
+            omega_mode = 2.0 * np.sin(mode_number * argMode)
             q_new[j] = coef * omega_mode * term
         q_sum = np.sum(q_new)
         qBigSq = 0.5 * q_sum ** 2
