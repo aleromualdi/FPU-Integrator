@@ -98,8 +98,8 @@ class FPU(object):
         return q, p
 
     def _compute_force(self, q: np.array) -> np.array:
-        """Gives linear (Hook's law) plus nonlinear (quadratic, cubic) terms dictated by alpha and beta,
-         respectively."""
+        """Gives linear (Hook's law) plus nonlinear (quadratic, cubic) terms
+        dictated by alpha and beta, respectively."""
         force = np.zeros(shape=(self.num_atoms,))
 
         n_f = self.num_atoms - 1
@@ -113,7 +113,6 @@ class FPU(object):
             + self.beta * (q[1] - q[0]) ** 3
             - self.beta * q[0] ** 3
         )
-        # print("self.alpha * (q[1] - q[0]) ** 2", q[1], q[0])
         force[n_f] = (
             q[n_f_minus]
             - 2.0 * q[n_f]
@@ -139,18 +138,18 @@ class FPU(object):
         coef = np.sqrt(2.0 / (self.num_atoms + 1))
         q_new = np.zeros(shape=self.num_atoms)
         p_new = np.zeros(shape=self.num_atoms)
-
+        argMode = np.pi/(self.num_atoms + 1)
         for j in range(0, self.num_atoms):
             sin_arg = (j * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * q[j]
-            q_new[j] = coef * term
+            omega_mode = 2. * np.sin(mode_number * argMode)
+            q_new[j] = coef * omega_mode * term
         q_sum = np.sum(q_new)
         qBigSq = 0.5 * q_sum ** 2
 
         for j in range(0, self.num_atoms):
             sin_arg = (j * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * p[j]
-            # print("sin_arg", sin_arg, "p[j]", p[j])
             p_new[j] = coef * term
         p_sum = np.sum(p_new)
         pBigSq = 0.5 * p_sum ** 2
