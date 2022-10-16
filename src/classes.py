@@ -127,7 +127,7 @@ class FPU(object):
         return q, p
 
     def _compute_force(self, q: np.array) -> np.array:
-        """Gives linear (Hook's law) plus nonlinear (quadratic, cubic) terms
+        """Gives linear (Hook's law) plus nonlinear (quadratic and cubic) terms
         dictated by alpha and beta, respectively."""
         force = np.zeros(shape=(self.num_atoms,))
 
