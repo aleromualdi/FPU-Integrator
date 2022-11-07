@@ -12,12 +12,10 @@ To install requirements:
 pip install -r requirements.txt
 ```
 
-To run the script to generate simulation
+To run the notebooks
 
 ```
-cd src
-
-python3 script.py
+jupyter notebook
 ```
 
 
