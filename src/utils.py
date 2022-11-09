@@ -1,12 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from numpy import linalg as LA
 from sklearn.decomposition import PCA
-
 from sklearn.preprocessing import StandardScaler
-from classes import FPU
-from numpy import linalg as LA
-
 
 
 def plot_mode_energies(data, xlim=None):
