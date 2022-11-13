@@ -1,1 +1,6 @@
 /notebooks/output/
+**/.DS_Store
+.vscode/
+.idea/
+notebooks/.ipynb_checkpoints/
+src/__pycache__/
