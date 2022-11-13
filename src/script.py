@@ -1,4 +1,4 @@
-from classes import FPU
+from fput_integrator import FPUT_Integrator
 import matplotlib.pyplot as plt
 
 
@@ -21,7 +21,7 @@ NUM_MODES = 3  # number of modes to be observed
 FPU
 """
 
-fpu = FPU(
+fpu = FPUT_Integrator(
     num_atoms=NUM_ATOMS,
     num_modes=NUM_MODES,
     initial_mode_number=INITIAL_MODE_NUMBER,

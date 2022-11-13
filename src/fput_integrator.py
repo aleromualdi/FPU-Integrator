@@ -3,7 +3,7 @@ from typing import Tuple
 from tqdm import tqdm
 
 
-class FPU(object):
+class FPUT_Integrator(object):
     """Fermi-Pasta-Ulam integrator based on Verlet algorithm [...]"""
 
     def __init__(
