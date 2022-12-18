@@ -5,23 +5,38 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 
-def plot_mode_energies(data, xlim=None):
+def plot_mode_energies(data, xlim=None, ignore_first_steps=0):
     time_steps, _, _, mode_energies = data
 
     plt.plot(
-        time_steps, mode_energies[0, :], "k-", linewidth=1.5, label="Mode 1", alpha=0.5
+        time_steps[ignore_first_steps:],
+        mode_energies[0, :][ignore_first_steps:],
+        "k-",
+        linewidth=1.5,
+        label="Mode 1",
+        alpha=0.5,
     )
     plt.plot(
-        time_steps, mode_energies[1, :], "g-", linewidth=1.5, label="Mode 2", alpha=0.5
+        time_steps[ignore_first_steps:],
+        mode_energies[1, :][ignore_first_steps:],
+        "g-",
+        linewidth=1.5,
+        label="Mode 2",
+        alpha=0.5,
     )
     plt.plot(
-        time_steps, mode_energies[2, :], "r-", linewidth=1.5, label="Mode 3", alpha=0.5
+        time_steps[ignore_first_steps:],
+        mode_energies[2, :][ignore_first_steps:],
+        "r-",
+        linewidth=1.5,
+        label="Mode 3",
+        alpha=0.5,
     )
     if xlim:
         plt.xlim(xlim)
     plt.xlabel("$t$ ")
     plt.ylabel("Energy ")
-    legend = plt.legend(loc="upper right", shadow=True, fontsize="x-small")
+    plt.legend(loc="upper right", shadow=True, fontsize="x-small")
     plt.show()
 
 
@@ -72,11 +87,12 @@ def compute_explained_ratio(X, pre_whitening=False, verbose=True):
 
 def plot_consecutive_distances(data, n_points=None):
     """Plot distances between first point in phase-space and consecutive points
-    at time t. Plot first `n_points`
+    at time t. Plot first `n_points`.
     """
-    times, q, p, _ = data
-    dist_vec = [0]
 
+    times, q, _, _ = data
+
+    dist_vec = [0]
     if n_points is not None:
         n_points = min(len(times), n_points)
     else:

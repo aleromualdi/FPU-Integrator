@@ -1,15 +1,14 @@
 import numpy as np
-from typing import Tuple
-from tqdm import tqdm
 
 
 class FPUT_Integrator(object):
-    """Fermi-Pasta-Ulam integrator based on Verlet algorithm [...]"""
+    """Fermi-Pasta-Ulam integrator based on Verlet or Runge-Kutta
+    algorithms [...]"""
 
     def __init__(
         self,
-        num_atoms: int,
         num_modes: int,
+        num_atoms: int,
         initial_mode_number: int,
         initial_mode_amplitude: float,
         t_step: float,
@@ -24,7 +23,6 @@ class FPUT_Integrator(object):
         self.t_step = t_step
         self.t_max = t_max
         self.n_time_steps = int(self.t_max / self.t_step)
-
         self.alpha = alpha
         self.beta = beta
 
@@ -49,7 +47,6 @@ class FPUT_Integrator(object):
         self.p = np.zeros(shape=(self.num_atoms, self.n_time_steps))
 
     def _initial_mode_energies(self):
-
         mode_energies = np.zeros(shape=(self.num_modes, self.n_time_steps))
 
         for mode_number in range(self.num_modes):
@@ -59,19 +56,33 @@ class FPUT_Integrator(object):
 
         self.mode_energies = mode_energies
 
-    def run(
-        self, method="verlet"
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def run(self, method="verlet") -> tuple:
         """Run Fermi-Pasta-Ulam integrator.
+
+        Parameters
+        ----------
+        method : str
+            can be `verlet` or `runge-kutta`. By default `verlet`
 
         Returns
         -------
-        array of time steps and nd array of mode energies
+        tuple
+            arrays of time steps, p, q and mode energies
         """
 
         times = [0]
         current_time = 0
+
+        # this to ignore tqdm in case not installed
+        try:
+            from tqdm import tqdm
+        except ImportError:
+
+            def tqdm(iterator, *args, **kwargs):
+                return iterator
+
         for t in tqdm(range(self.n_time_steps - 1)):
+
             if method == "verlet":
                 self.q[:, t + 1], self.p[:, t + 1] = self._perform_verlet_step(
                     self.q[:, t], self.p[:, t]
@@ -93,9 +104,7 @@ class FPUT_Integrator(object):
 
         return np.array(times), self.q, self.p, self.mode_energies
 
-    def _perform_verlet_step(
-        self, q: np.array, p: np.array
-    ) -> Tuple[np.array, np.array]:
+    def _perform_verlet_step(self, q: np.array, p: np.array) -> tuple:
         """Perform one step of the velocity Verlet algorithm."""
 
         p_half = p + 0.5 * self.t_step * self._compute_force(q)
@@ -104,9 +113,7 @@ class FPUT_Integrator(object):
 
         return q, p
 
-    def _perform_runge_kutta_step(
-        self, q: np.array, p: np.array
-    ) -> Tuple[np.array, np.array]:
+    def _perform_runge_kutta_step(self, q: np.array, p: np.array) -> tuple:
         """Perform 4th order Runge-Kutta algorithm."""
         k1_q = p
         k1_p = self._compute_force(q)
@@ -129,6 +136,7 @@ class FPUT_Integrator(object):
     def _compute_force(self, q: np.array) -> np.array:
         """Gives linear (Hook's law) plus nonlinear (quadratic and cubic) terms
         dictated by alpha and beta, respectively."""
+
         force = np.zeros(shape=(self.num_atoms,))
 
         n_f = self.num_atoms - 1
@@ -164,23 +172,24 @@ class FPUT_Integrator(object):
         return force
 
     def _compute_mode_energy(self, q: np.array, p: np.array, mode_number: int) -> float:
+
         coef = np.sqrt(2.0 / (self.num_atoms + 1))
+
         q_new = np.zeros(shape=self.num_atoms)
         p_new = np.zeros(shape=self.num_atoms)
-        argMode = np.pi / (self.num_atoms + 1)
         for j in range(0, self.num_atoms):
             sin_arg = ((j + 1) * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * q[j]
-            omega_mode = 2.0 * np.sin(0.5 * mode_number * argMode)
+            omega_mode = 2.0 * np.sin(0.5 * mode_number * np.pi / (self.num_atoms + 1))
             q_new[j] = coef * omega_mode * term
         q_sum = np.sum(q_new)
-        qBigSq = 0.5 * q_sum ** 2
+        q_sum_squared = 0.5 * q_sum**2
 
         for j in range(0, self.num_atoms):
             sin_arg = ((j + 1) * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * p[j]
             p_new[j] = coef * term
         p_sum = np.sum(p_new)
-        pBigSq = 0.5 * p_sum ** 2
+        p_sum_squared = 0.5 * p_sum**2
 
-        return pBigSq + qBigSq
+        return q_sum_squared + p_sum_squared
