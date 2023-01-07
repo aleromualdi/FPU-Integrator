@@ -174,22 +174,22 @@ class FPUT_Integrator(object):
     def _compute_mode_energy(self, q: np.array, p: np.array, mode_number: int) -> float:
 
         coef = np.sqrt(2.0 / (self.num_atoms + 1))
-
         q_new = np.zeros(shape=self.num_atoms)
         p_new = np.zeros(shape=self.num_atoms)
+        argMode = np.pi / (self.num_atoms + 1)
         for j in range(0, self.num_atoms):
             sin_arg = ((j + 1) * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * q[j]
-            omega_mode = 2.0 * np.sin(0.5 * mode_number * np.pi / (self.num_atoms + 1))
+            omega_mode = 2.0 * np.sin(0.5 * mode_number * argMode)
             q_new[j] = coef * omega_mode * term
         q_sum = np.sum(q_new)
-        q_sum_squared = 0.5 * q_sum**2
+        qBigSq = 0.5 * q_sum**2
 
         for j in range(0, self.num_atoms):
             sin_arg = ((j + 1) * mode_number * np.pi) / (self.num_atoms + 1)
             term = np.sin(sin_arg) * p[j]
             p_new[j] = coef * term
         p_sum = np.sum(p_new)
-        p_sum_squared = 0.5 * p_sum**2
+        pBigSq = 0.5 * p_sum**2
 
-        return q_sum_squared + p_sum_squared
+        return pBigSq + qBigSq
