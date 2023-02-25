@@ -81,11 +81,12 @@ class FPUT_Integrator(object):
             def tqdm(iterator, *args, **kwargs):
                 return iterator
 
-        for t in tqdm(range(self.n_time_steps - 1)):
+        print("Computing integrartion steps...")
+        for t in tqdm(range(1, self.n_time_steps)):
 
             if method == "verlet":
-                self.q[:, t + 1], self.p[:, t + 1] = self._perform_verlet_step(
-                    self.q[:, t], self.p[:, t]
+                self.q[:, t], self.p[:, t] = self._perform_verlet_step(
+                    self.q[:, t - 1], self.p[:, t - 1]
                 )
             elif method == "runge-kutta":
                 self.q[:, t + 1], self.p[:, t + 1] = self._perform_runge_kutta_step(
@@ -95,12 +96,15 @@ class FPUT_Integrator(object):
             current_time += self.t_step
             times.append(current_time)
 
+        print("Computing mode energies...")
+        for t in tqdm(range(0, self.n_time_steps)):
+
             for mode_idx in range(self.num_modes):
                 mode_number = mode_idx + 1
                 mode_energy = self._compute_mode_energy(
-                    self.q[:, t + 1], self.p[:, t + 1], mode_number
+                    self.q[:, t], self.p[:, t], mode_number
                 )
-                self.mode_energies[mode_idx][t + 1] = mode_energy
+                self.mode_energies[mode_idx][t] = mode_energy
 
         return np.array(times), self.q, self.p, self.mode_energies
 
