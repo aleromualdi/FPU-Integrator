@@ -46,7 +46,7 @@ jupyter notebook
 
 - [ ] generate dataset
   - [x] write script for generation of dataset to run on cluster
-  - [ ] generate dataset running the script on cluster
+  - [x] generate dataset running the script on cluster
 
 - [ ] investigate non-ergotic -> ergotic biforcation
     - [ ] PCA

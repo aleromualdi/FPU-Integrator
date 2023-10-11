@@ -5,6 +5,8 @@ class FPUT_Integrator(object):
     """Fermi-Pasta-Ulam integrator based on Verlet or Runge-Kutta
     algorithms [...]"""
 
+
+
     def __init__(
         self,
         num_modes: int,
@@ -116,6 +118,7 @@ class FPUT_Integrator(object):
         p = p_half + 0.5 * self.t_step * self._compute_force(q)
 
         return q, p
+
 
     def _perform_runge_kutta_step(self, q: np.array, p: np.array) -> tuple:
         """Perform 4th order Runge-Kutta algorithm."""

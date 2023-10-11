@@ -7,3 +7,6 @@ src/__pycache__/
 .output/
 **.pyc
 **.egg-info
+
+gionni/
+data/
