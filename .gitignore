@@ -4,9 +4,9 @@
 .idea/
 notebooks/.ipynb_checkpoints/
 src/__pycache__/
-.output/
 **.pyc
 **.egg-info
 
 gionni/
 data/
+notebooks/others
