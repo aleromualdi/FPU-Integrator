@@ -215,3 +215,15 @@ def set_size(width, fraction=1, subplots=(1, 1)):
     fig_height_in = fig_width_in * golden_ratio * (subplots[0] / subplots[1])
 
     return (fig_width_in, fig_height_in)
+
+
+
+def temporalize_data(X, timesteps):
+    output_X = []
+    for i in range(len(X)-timesteps-1):
+        t = []
+        for j in range(1, timesteps+1):
+            # Gather past records upto the timesteps period
+            t.append(X[(i+j+1), :])
+        output_X.append(t)
+    return np.array(output_X)
