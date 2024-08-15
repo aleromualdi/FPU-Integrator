@@ -42,20 +42,3 @@ jupyter notebook
 ```
 
 
-# ToDos
-
-- [ ] generate dataset
-  - [x] write script for generation of dataset to run on cluster
-  - [x] generate dataset running the script on cluster
-
-- [ ] investigate non-ergotic -> ergotic biforcation
-    - [ ] PCA
-        - [ ] create plot of PC explained variance ratio vs beta
-    - [ ] persistence homology graphs
-        - [ ] find homologies across biforcation
-    - [ ] Mapper
-        - [ ]  find topological summary in torus (non-ergotic)
-
-- [ ] summarise findings in OverLeaf
-
-
